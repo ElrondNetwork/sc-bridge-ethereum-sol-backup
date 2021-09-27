@@ -15,6 +15,7 @@
 **/dist
 **/node_modules
 **/typechain
+**/.DS_Store
 
 # files
 *.env

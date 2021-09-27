@@ -1,10 +1,10 @@
 {
-  "name": "@paulrberg/solidity-template",
+  "name": "@dekuyper/solidity-template",
   "description": "Setup for writing Solidity smart contracts",
   "version": "1.0.0",
   "author": {
-    "name": "Paul Razvan Berg",
-    "url": "https://paulrberg.com"
+    "name": "Nick Oprisan",
+    "url": "https://github.com/dekuyper"
   },
   "devDependencies": {
     "@codechecks/client": "^0.1.11",
@@ -36,6 +36,7 @@
     "ethers": "^5.4.6",
     "fs-extra": "^10.0.0",
     "hardhat": "^2.6.2",
+    "hardhat-contract-sizer": "^2.1.1",
     "hardhat-gas-reporter": "^1.0.4",
     "husky": "^7.0.2",
     "lint-staged": "^11.1.2",
@@ -75,6 +76,10 @@
     "prettier": "prettier --config ./.prettierrc.yaml --write \"**/*.{js,json,md,sol,ts}\"",
     "prettier:check": "prettier --check --config ./.prettierrc.yaml \"**/*.{js,json,md,sol,ts}\"",
     "test": "hardhat test",
-    "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain"
+    "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
+    "size": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat compile; hardhat size-contracts"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.2"
   }
 }
