@@ -106,7 +106,7 @@ describe("Bridge", async function () {
     it("reverts when not called by admin", async function () {
       nonAdminBridge = bridge.connect(otherWallet);
       await expect(nonAdminBridge.addRelayer(relayer4.address)).to.be.revertedWith(
-        "AccessControl: account 0x0c2e32552ebc0f6af260eaf23b39e9e2069cff66 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000",
+        "AccessControl: sender must be an admin to grant",
       );
     });
 
@@ -149,7 +149,7 @@ describe("Bridge", async function () {
     it("reverts when not called by admin", async function () {
       nonAdminBridge = bridge.connect(otherWallet);
       await expect(nonAdminBridge.removeRelayer(relayer4.address)).to.be.revertedWith(
-        "AccessControl: account 0x0c2e32552ebc0f6af260eaf23b39e9e2069cff66 is missing role 0x0000000000000000000000000000000000000000000000000000000000000000",
+        "AccessControl: sender must be an admin to revoke",
       );
     });
 
