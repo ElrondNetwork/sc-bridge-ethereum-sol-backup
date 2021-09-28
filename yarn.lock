@@ -338,6 +338,7 @@ __metadata:
     hardhat: ^2.6.2
     hardhat-contract-sizer: ^2.1.1
     hardhat-gas-reporter: ^1.0.4
+    hardhat-log-remover: ^2.0.2
     husky: ^7.0.2
     lint-staged: ^11.1.2
     mocha: ^9.1.1
@@ -7540,6 +7541,15 @@ fsevents@~2.1.1:
   peerDependencies:
     hardhat: ^2.0.2
   checksum: c8c1d79bfbb6956cabbe5563e0f40c3bb7f2227a3c278f9afe73bc8f44125440e1b1f7ab60f5280b93ed8ae8f748dad73d7bbca892074f5f1edf026394c8ee09
+  languageName: node
+  linkType: hard
+
+"hardhat-log-remover@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "hardhat-log-remover@npm:2.0.2"
+  peerDependencies:
+    hardhat: ^2.0.0
+  checksum: 4e161ca0458bea34039af9839a69afbd7322b366dc7fec26d3c05b3558a3fbefe858cbf52f77b5566eb054c1ff8e7055ca4477d1a94bc5c7b16028bed64d329e
   languageName: node
   linkType: hard
 
