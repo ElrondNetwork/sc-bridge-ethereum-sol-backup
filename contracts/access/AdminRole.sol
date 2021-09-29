@@ -39,7 +39,7 @@ abstract contract AdminRole {
      * @dev Throws if called by any account other than the admin.
      */
     modifier onlyAdmin() {
-        require(admin() == msg.sender, "Access Control: sender is not Admin");
+        require(admin() == msg.sender, "AdminRole: sender is not Admin");
         _;
     }
 

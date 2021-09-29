@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./SharedStructs.sol";
 import "./ERC20Safe.sol";
+import "./access/RelayerRole.sol";
 
 /**
 @title Bridge
@@ -21,17 +21,14 @@ In order to use it:
 @dev This contract mimics a multisign contract by sending the signatures from all 
 relayers with the execute call, in order to save gas.
  */
-contract Bridge is AccessControl {
+contract Bridge is RelayerRole {
     /*============================ EVENTS ============================*/
-    event RelayerAdded(address newRelayer);
-    event RelayerRemoved(address removedRelayer);
     event QuorumChanged(uint256 quorum);
 
     /*========================= CONTRACT STATE =========================*/
     string private constant action = "CurrentPendingBatch";
     string private constant executeTransferAction = "ExecuteBatchedTransfer";
     string private constant prefix = "\x19Ethereum Signed Message:\n32";
-    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
     uint256 private constant minimumQuorum = 3;
 
     uint256 public quorum;
@@ -39,22 +36,11 @@ contract Bridge is AccessControl {
 
     mapping(uint256 => bool) public executedBatches;
 
-    /*========================= MODIFIERS =========================*/
-    modifier onlyAdmin() {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Access Control: sender is not Admin");
-        _;
-    }
-
-    modifier onlyRelayer() {
-        require(hasRole(RELAYER_ROLE, msg.sender), "Access Control: sender is not Relayer");
-        _;
-    }
-
     /*========================= PUBLIC API =========================*/
 
     /**
      * @dev whoever deploys the contract is the admin
-     * DEFAULT_ADMIN_ROLE means that it can:
+     * Admin Role means that it can:
      *   - adjust access control
      *   - add/remove relayers
      *   - add/remove tokens that can be bridged
@@ -65,35 +51,11 @@ contract Bridge is AccessControl {
         ERC20Safe erc20Safe
     ) {
         require(intialQuorum >= minimumQuorum, "Quorum is too low.");
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
-        for (uint256 i = 0; i < board.length; i++) {
-            grantRole(RELAYER_ROLE, board[i]);
-        }
+        _addRelayers(board);
 
         quorum = intialQuorum;
         safe = erc20Safe;
-    }
-
-    /**
-        @notice Adds (whitelists) a relayer. This does not have any effect on the quorum variable.
-        @param newRelayerAddress Wallet address for the new relayer that's added
-    */
-    function addRelayer(address newRelayerAddress) external {
-        require(newRelayerAddress != address(0), "newRelayerAddress cannot be 0x0");
-        require(!hasRole(RELAYER_ROLE, newRelayerAddress), "newRelayerAddress is already a relayer");
-        grantRole(RELAYER_ROLE, newRelayerAddress);
-        emit RelayerAdded(newRelayerAddress);
-    }
-
-    /**
-        @notice Removes a relayer. This does not have any effect on the quorum variable.
-        @param relayerAddress Wallet address for the new relayer that will be removed
-    */
-    function removeRelayer(address relayerAddress) external {
-        require(hasRole(RELAYER_ROLE, relayerAddress), "Provided address is not a relayer");
-        revokeRole(RELAYER_ROLE, relayerAddress);
-        emit RelayerRemoved(relayerAddress);
     }
 
     /**
@@ -142,7 +104,7 @@ contract Bridge is AccessControl {
         Batch memory batch = safe.getNextPendingBatch();
         require(batch.nonce == batchNonceETHElrond, "Invalid batch nonce");
 
-        validateQuorum(signatures, getHashedDepositData(abi.encode(batchNonceETHElrond, newDepositStatuses, action)));
+        _validateQuorum(signatures, _getHashedDepositData(abi.encode(batchNonceETHElrond, newDepositStatuses, action)));
 
         safe.finishCurrentPendingBatch(newDepositStatuses);
     }
@@ -168,9 +130,9 @@ contract Bridge is AccessControl {
         require(executedBatches[batchNonceElrondETH] == false, "Batch already executed");
         executedBatches[batchNonceElrondETH] = true;
 
-        validateQuorum(
+        _validateQuorum(
             signatures,
-            getHashedDepositData(abi.encode(recipients, tokens, amounts, batchNonceElrondETH, executeTransferAction))
+            _getHashedDepositData(abi.encode(recipients, tokens, amounts, batchNonceElrondETH, executeTransferAction))
         );
 
         for (uint256 j = 0; j < tokens.length; j++) {
@@ -206,18 +168,18 @@ contract Bridge is AccessControl {
     }
 
     /*========================= PRIVATE API =========================*/
-    function getHashedDepositData(bytes memory encodedData) private pure returns (bytes32) {
+    function _getHashedDepositData(bytes memory encodedData) private pure returns (bytes32) {
         return keccak256(abi.encodePacked(prefix, keccak256(encodedData)));
     }
 
-    function validateQuorum(bytes[] memory signatures, bytes32 data) private view {
+    function _validateQuorum(bytes[] memory signatures, bytes32 data) private view {
         uint256 signersCount;
         address[] memory validSigners = new address[](signatures.length);
 
         for (uint256 i = 0; i < signatures.length; i++) {
-            address publicKey = recover(signatures[i], data);
+            address publicKey = _recover(signatures[i], data);
 
-            require(hasRole(RELAYER_ROLE, publicKey), "Not a recognized relayer");
+            require(_isRelayer(publicKey), "Not a recognized relayer");
 
             // Determine if we have multiple signatures from the same relayer
             uint256 si;
@@ -241,7 +203,7 @@ contract Bridge is AccessControl {
         require(signersCount >= quorum, "Quorum was not met");
     }
 
-    function recover(bytes memory signature, bytes32 data) private pure returns (address) {
+    function _recover(bytes memory signature, bytes32 data) private pure returns (address) {
         require(signature.length == 65, "Malformed signature");
 
         bytes32 r;

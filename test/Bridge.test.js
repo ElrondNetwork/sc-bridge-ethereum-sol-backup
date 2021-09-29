@@ -4,23 +4,20 @@ const { provider, deployContract } = waffle;
 
 const BridgeContract = require("../artifacts/contracts/Bridge.sol/Bridge.json");
 const ERC20SafeContract = require("../artifacts/contracts/ERC20Safe.sol/ERC20Safe.json");
-const IERC20 = require("../artifacts/@openzeppelin/contracts/token/ERC20/IERC20.sol/IERC20.json");
 const AFC = require("../artifacts/contracts/AFCoin.sol/AFCoin.json");
 
 describe("Bridge", async function () {
   const [adminWallet, relayer1, relayer2, relayer3, relayer4, relayer5, relayer6, relayer7, relayer8, otherWallet] =
     provider.getWallets();
-  const boardMembers = [adminWallet, relayer1, relayer2, relayer3, relayer5, relayer6, relayer7, relayer8];
+  const boardMembers = [adminWallet, relayer1, relayer2, relayer3, relayer5, relayer6, relayer7, relayer8].map(
+    m => m.address,
+  );
   const quorum = 7;
   const batchSize = 10;
 
   async function setupContracts() {
     erc20Safe = await deployContract(adminWallet, ERC20SafeContract);
-    bridge = await deployContract(adminWallet, BridgeContract, [
-      boardMembers.map(m => m.address),
-      quorum,
-      erc20Safe.address,
-    ]);
+    bridge = await deployContract(adminWallet, BridgeContract, [boardMembers, quorum, erc20Safe.address]);
     await erc20Safe.setBridge(bridge.address);
     await setupErc20Token();
   }
@@ -67,31 +64,22 @@ describe("Bridge", async function () {
   });
 
   it("Sets creator as admin", async function () {
-    ADMIN_ROLE = await bridge.DEFAULT_ADMIN_ROLE();
-    expect(await bridge.hasRole(ADMIN_ROLE, adminWallet.address)).to.be.true;
+    expect(await bridge.admin()).to.equal(adminWallet.address);
   });
 
   it("Sets the quorum", async function () {
-    expect(await bridge.quorum.call()).to.equal(quorum);
+    expect(await bridge.quorum()).to.equal(quorum);
   });
 
   it("Sets the board members with relayer rights", async function () {
-    RELAYER_ROLE = await bridge.RELAYER_ROLE();
-
-    boardMembers.forEach(async function (member) {
-      expect(await bridge.hasRole(RELAYER_ROLE, member.address)).to.be.true;
-    });
+    expect(await bridge.getRelayers()).to.eql(boardMembers);
   });
 
   describe("when initialized with a quorum that is lower than the minimum", async function () {
     it("reverts", async function () {
       invalidQuorumValue = 1;
       await expect(
-        deployContract(adminWallet, BridgeContract, [
-          boardMembers.map(m => m.address),
-          invalidQuorumValue,
-          erc20Safe.address,
-        ]),
+        deployContract(adminWallet, BridgeContract, [boardMembers, invalidQuorumValue, erc20Safe.address]),
       ).to.be.revertedWith("Quorum is too low.");
     });
   });
@@ -99,62 +87,60 @@ describe("Bridge", async function () {
   describe("addRelayer", async function () {
     it("reverts when called with an empty address", async function () {
       await expect(bridge.addRelayer(ethers.constants.AddressZero)).to.be.revertedWith(
-        "newRelayerAddress cannot be 0x0",
+        "RelayerRole: account cannot be the 0 address",
       );
     });
 
     it("reverts when not called by admin", async function () {
       nonAdminBridge = bridge.connect(otherWallet);
-      await expect(nonAdminBridge.addRelayer(relayer4.address)).to.be.revertedWith(
-        "AccessControl: sender must be an admin to grant",
-      );
+      await expect(nonAdminBridge.addRelayer(relayer4.address)).to.be.revertedWith("AdminRole: sender is not Admin");
     });
 
     it("adds the address as a relayer", async function () {
-      RELAYER_ROLE = await bridge.RELAYER_ROLE();
-
       await bridge.addRelayer(relayer4.address);
 
-      expect(await bridge.hasRole(RELAYER_ROLE, relayer4.address)).to.be.true;
+      expect(await bridge.isRelayer(relayer4.address)).to.be.true;
     });
 
     it("emits event that a relayer was added", async function () {
-      await expect(bridge.addRelayer(relayer4.address)).to.emit(bridge, "RelayerAdded").withArgs(relayer4.address);
+      await expect(bridge.addRelayer(relayer4.address))
+        .to.emit(bridge, "RelayerAdded")
+        .withArgs(relayer4.address, adminWallet);
     });
 
     it("reverts if new relayer is already a relayer", async function () {
-      RELAYER_ROLE = await bridge.RELAYER_ROLE();
       await bridge.addRelayer(relayer4.address);
 
-      await expect(bridge.addRelayer(relayer4.address)).to.be.revertedWith("newRelayerAddress is already a relayer");
+      await expect(bridge.addRelayer(relayer4.address)).to.be.revertedWith("RelayerRole: address is already a relayer");
     });
   });
 
   describe("removeRelayer", async function () {
     beforeEach(async function () {
-      RELAYER_ROLE = await bridge.RELAYER_ROLE();
       await bridge.addRelayer(relayer4.address);
     });
 
     it("removes the relayer", async function () {
       await bridge.removeRelayer(relayer4.address);
 
-      expect(await bridge.hasRole(RELAYER_ROLE, relayer4.address)).to.be.false;
+      expect(await bridge.isRelayer(relayer4.address)).to.be.false;
     });
 
     it("emits an event", async function () {
-      await expect(bridge.removeRelayer(relayer4.address)).to.emit(bridge, "RelayerRemoved").withArgs(relayer4.address);
+      await expect(bridge.removeRelayer(relayer4.address))
+        .to.emit(bridge, "RelayerRemoved")
+        .withArgs(relayer4.address, adminWallet);
     });
 
     it("reverts when not called by admin", async function () {
       nonAdminBridge = bridge.connect(otherWallet);
-      await expect(nonAdminBridge.removeRelayer(relayer4.address)).to.be.revertedWith(
-        "AccessControl: sender must be an admin to revoke",
-      );
+      await expect(nonAdminBridge.removeRelayer(relayer4.address)).to.be.revertedWith("AdminRole: sender is not Admin");
     });
 
     it("reverts if address is not already a relayer", async function () {
-      await expect(bridge.removeRelayer(otherWallet.address)).to.be.revertedWith("Provided address is not a relayer");
+      await expect(bridge.removeRelayer(otherWallet.address)).to.be.revertedWith(
+        "RelayerRole: address is not a relayer",
+      );
     });
   });
 
@@ -164,7 +150,7 @@ describe("Bridge", async function () {
     it("sets the quorum with the new value", async function () {
       await bridge.setQuorum(newQuorum);
 
-      expect(await bridge.quorum.call()).to.equal(newQuorum);
+      expect(await bridge.quorum()).to.equal(newQuorum);
     });
 
     it("emits event", async function () {
@@ -173,7 +159,7 @@ describe("Bridge", async function () {
 
     it("reverts when not called by admin", async function () {
       nonAdminBridge = bridge.connect(otherWallet);
-      await expect(nonAdminBridge.setQuorum(newQuorum)).to.be.revertedWith("Access Control: sender is not Admin");
+      await expect(nonAdminBridge.setQuorum(newQuorum)).to.be.revertedWith("AdminRole: sender is not Admin");
     });
 
     describe("when quorum is lower than the minimum", async function () {
