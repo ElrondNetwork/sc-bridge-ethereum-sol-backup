@@ -1,10 +1,11 @@
-//SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
+//SPDX-License-Identifier: UNLICENSED
+
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./SharedStructs.sol";
+import "./access/BridgeRole.sol";
 
 /**
 @title ERC20 Safe for bridging tokens
@@ -17,7 +18,7 @@ In order to use it:
 they will be batched either by time (batchTimeLimit) or size (batchSize).
 There can only be one pending Batch. 
  */
-contract ERC20Safe {
+contract ERC20Safe is BridgeRole {
     using SafeERC20 for IERC20;
 
     uint256 public depositsCount;
@@ -30,31 +31,14 @@ contract ERC20Safe {
     mapping(uint256 => Batch) public batches;
     mapping(address => bool) public whitelistedTokens;
     mapping(address => uint256) public tokenLimits;
-    address public adminAddress;
-    address public bridgeAddress;
     uint256 private currentPendingBatch;
 
-    event BridgeAddressChanged(address newAddress);
     event BatchTimeLimitChanged(uint256 newTimeLimitInSeconds);
     event UpdatedDepositStatus(uint256 depositNonce, DepositStatus newDepositStatus);
     event BatchSizeChanged(uint256 newBatchSize);
     event TokenWhitelisted(address tokenAddress, uint256 minimumAmount);
     event TokenRemovedFromWhitelist(address tokenAddress);
     event ERC20Deposited(uint256 depositNonce);
-
-    modifier onlyAdmin() {
-        require(msg.sender == adminAddress, "Access Control: sender is not Admin");
-        _;
-    }
-
-    modifier onlyBridge() {
-        require(msg.sender == bridgeAddress, "Access Control: sender is not Bridge");
-        _;
-    }
-
-    constructor() {
-        adminAddress = msg.sender;
-    }
 
     /**
       @notice Whitelist a token. Only whitelisted tokens can be bridged through the bridge. 
@@ -72,11 +56,6 @@ contract ERC20Safe {
     function removeTokenFromWhitelist(address token) external onlyAdmin {
         whitelistedTokens[token] = false;
         emit TokenRemovedFromWhitelist(token);
-    }
-
-    function setBridgeAddress(address _bridgeAddress) external onlyAdmin {
-        bridgeAddress = _bridgeAddress;
-        emit BridgeAddressChanged(bridgeAddress);
     }
 
     function setBatchTimeLimit(uint256 newBatchTimeLimit) external onlyAdmin {

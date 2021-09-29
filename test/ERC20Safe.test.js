@@ -7,7 +7,7 @@ const ERC20Safe = require("../artifacts/contracts/ERC20Safe.sol/ERC20Safe.json")
 const Bridge = require("../artifacts/contracts/Bridge.sol/Bridge.json");
 
 describe("ERC20Safe", async function () {
-  const [adminWallet, bridgeWallet, otherWallet] = provider.getWallets();
+  const [adminWallet, otherWallet] = provider.getWallets();
   const boardMembers = [adminWallet];
 
   beforeEach(async function () {
@@ -15,11 +15,11 @@ describe("ERC20Safe", async function () {
     safe = await deployContract(adminWallet, ERC20Safe);
     bridge = await deployContract(adminWallet, Bridge, [boardMembers.map(m => m.address), 3, safe.address]);
     await afc.approve(safe.address, 1000);
-    await safe.setBridgeAddress(bridge.address);
+    await safe.setBridge(bridge.address);
   });
 
   it("sets creator as admin", async function () {
-    expect(await safe.adminAddress.call()).to.equal(adminWallet.address);
+    expect(await safe.admin()).to.equal(adminWallet.address);
   });
 
   describe("whitelistToken", async function () {
@@ -82,17 +82,17 @@ describe("ERC20Safe", async function () {
     });
   });
 
-  describe("setBridgeAddress", async function () {
-    it("updates updates the address", async function () {
-      await safe.setBridgeAddress(bridgeWallet.address);
-
-      expect(await safe.bridgeAddress.call()).to.equal(bridgeWallet.address);
+  describe("setBridge", async function () {
+    before(async function () {
+      secondBridge = await deployContract(adminWallet, Bridge, [boardMembers.map(m => m.address), 3, safe.address]);
     });
 
-    it("emits event", async function () {
-      await expect(safe.setBridgeAddress(bridgeWallet.address))
-        .to.emit(safe, "BridgeAddressChanged")
-        .withArgs(bridgeWallet.address);
+    it("updates the address", async function () {
+      await expect(safe.setBridge(secondBridge.address))
+        .to.emit(safe, "BridgeTransferred")
+        .withArgs(bridge.address, secondBridge.address);
+
+      expect(await safe.bridge()).to.equal(secondBridge.address);
     });
 
     describe("called by non admin", async function () {
@@ -101,9 +101,7 @@ describe("ERC20Safe", async function () {
       });
 
       it("reverts", async function () {
-        await expect(nonAdminSafe.setBridgeAddress(bridgeWallet.address)).to.be.revertedWith(
-          "Access Control: sender is not Admin",
-        );
+        await expect(nonAdminSafe.setBridge(bridge.address)).to.be.revertedWith("Access Control: sender is not Admin");
       });
     });
   });

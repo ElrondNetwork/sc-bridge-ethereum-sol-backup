@@ -3,9 +3,14 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "hardhat-contract-sizer";
 import "hardhat-log-remover";
+import "hardhat-tracer";
 
 import "./tasks/accounts";
 import "./tasks/clean";
+import "./tasks/add-to-whitelist";
+import "./tasks/mint-test-tokens";
+import "./tasks/set-quorum";
+
 import "./tasks/deploy";
 
 import { resolve } from "path";

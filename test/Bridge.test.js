@@ -21,7 +21,7 @@ describe("Bridge", async function () {
       quorum,
       erc20Safe.address,
     ]);
-    await erc20Safe.setBridgeAddress(bridge.address);
+    await erc20Safe.setBridge(bridge.address);
     await setupErc20Token();
   }
 
