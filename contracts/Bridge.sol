@@ -47,14 +47,14 @@ contract Bridge is RelayerRole {
      */
     constructor(
         address[] memory board,
-        uint256 intialQuorum,
+        uint256 initialQuorum,
         ERC20Safe erc20Safe
     ) {
-        require(intialQuorum >= minimumQuorum, "Quorum is too low.");
+        require(initialQuorum >= minimumQuorum, "Quorum is too low.");
 
         _addRelayers(board);
 
-        quorum = intialQuorum;
+        quorum = initialQuorum;
         safe = erc20Safe;
     }
 
