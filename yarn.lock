@@ -336,6 +336,7 @@ __metadata:
     ethers: ^5.4.6
     fs-extra: ^10.0.0
     hardhat: ^2.6.2
+    hardhat-abi-exporter: ^2.3.0
     hardhat-contract-sizer: ^2.1.1
     hardhat-gas-reporter: ^1.0.4
     hardhat-log-remover: ^2.0.2
@@ -7567,6 +7568,15 @@ fsevents@~2.1.1:
   version: 2.1.0
   resolution: "hard-rejection@npm:2.1.0"
   checksum: 7baaf80a0c7fff4ca79687b4060113f1529589852152fa935e6787a2bc96211e784ad4588fb3048136ff8ffc9dfcf3ae385314a5b24db32de20bea0d1597f9dc
+  languageName: node
+  linkType: hard
+
+"hardhat-abi-exporter@npm:^2.3.0":
+  version: 2.3.0
+  resolution: "hardhat-abi-exporter@npm:2.3.0"
+  peerDependencies:
+    hardhat: ^2.0.0
+  checksum: ed1e627a1e87d5d65ef5e34d97b486c4aa8c74efac117e52f27d2e05760e03ab2fb3afe9a11760269118b0536dd7467e5c3fcc0760bc9f01f096d0d1cfa270e2
   languageName: node
   linkType: hard
 

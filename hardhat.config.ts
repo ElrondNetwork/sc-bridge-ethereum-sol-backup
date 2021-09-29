@@ -4,6 +4,7 @@ import "hardhat-gas-reporter";
 import "hardhat-contract-sizer";
 import "hardhat-log-remover";
 import "hardhat-tracer";
+import "hardhat-abi-exporter";
 
 import "./tasks/accounts";
 import "./tasks/clean";
@@ -99,6 +100,13 @@ const config: HardhatUserConfig = {
   typechain: {
     outDir: "typechain",
     target: "ethers-v5",
+  },
+  abiExporter: {
+    path: "./abi",
+    clear: true,
+    flat: false,
+    only: [":Bridge$", ":ERC20Safe$"],
+    pretty: false,
   },
 };
 
