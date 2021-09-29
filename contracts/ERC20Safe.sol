@@ -45,6 +45,7 @@ contract ERC20Safe is BridgeRole {
       @param token Address of the contract for the ERC20 token that will be used by the bridge
       @param minimumAmount Number that specifies the minimum number of tokens that the user has to deposit (this is to prevent transactions that are too small)
       @notice emits {TokenWhitelisted} event
+      TODO: - Check token address is contract
    */
     function whitelistToken(address token, uint256 minimumAmount) external onlyAdmin {
         whitelistedTokens[token] = true;
@@ -75,6 +76,7 @@ contract ERC20Safe is BridgeRole {
       @param amount number of tokens that need to be deposited
       @param recipientAddress address of the receiver of tokens on Elrond Network
       @notice emits {ERC20Deposited} event
+      TODO: Check why recipientAddress is bytes and not address
    */
     function deposit(
         address tokenAddress,
