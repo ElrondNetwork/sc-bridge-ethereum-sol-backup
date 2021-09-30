@@ -179,7 +179,7 @@ contract Bridge is RelayerRole {
         for (uint256 i = 0; i < signatures.length; i++) {
             address publicKey = _recover(signatures[i], data);
 
-            require(_isRelayer(publicKey), "Not a recognized relayer");
+            require(isRelayer(publicKey), "Not a recognized relayer");
 
             // Determine if we have multiple signatures from the same relayer
             uint256 si;

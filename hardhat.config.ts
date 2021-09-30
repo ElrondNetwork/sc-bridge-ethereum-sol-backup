@@ -5,6 +5,7 @@ import "hardhat-contract-sizer";
 import "hardhat-log-remover";
 import "hardhat-tracer";
 import "hardhat-abi-exporter";
+import "solidity-coverage";
 
 import "./tasks/accounts";
 import "./tasks/clean";

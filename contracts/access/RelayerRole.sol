@@ -21,14 +21,12 @@ contract RelayerRole is AdminRole {
      * @dev Throws if called by any account other than the bridge.
      */
     modifier onlyRelayer() {
-        require(_isRelayer(msg.sender), "Access Control: sender is not Relayer");
+        require(isRelayer(msg.sender), "Access Control: sender is not Relayer");
         _;
     }
 
     function addRelayer(address account) external onlyAdmin {
-        _validateAddress(account);
-        require(_relayers.add(account), "RelayerRole: address is already a relayer");
-        emit RelayerAdded(account, msg.sender);
+        _addRelayer(account);
     }
 
     function removeRelayer(address account) external onlyAdmin {
@@ -41,10 +39,14 @@ contract RelayerRole is AdminRole {
         _removeRelayer(account);
     }
 
-    function isRelayer(address account) external view returns (bool) {
-        return _isRelayer(account);
+    function isRelayer(address account) public view returns (bool) {
+        return _relayers.contains(account);
     }
 
+    /**
+     * TODO: Either keep the functions for iteration (getRelayer and getRelayersCount) or getRelayers
+     *       Keeping both creates redundancy and increases gas costs
+     */
     function getRelayer(uint256 index) external view returns (address) {
         return _relayers.at(index);
     }
@@ -58,18 +60,23 @@ contract RelayerRole is AdminRole {
     }
 
     /**
-     * @notice This shouldn only be used for setup and relayers should be unique and validated
+     * @notice This should only be used on setup
      */
     function _addRelayers(address[] memory accounts) internal {
-        _relayers._values = accounts;
+        for (uint256 i = 0; i < accounts.length; i++) {
+            _addRelayer(accounts[i]);
+        }
+    }
+
+    function _addRelayer(address account) private {
+        _validateAddress(account);
+        require(_relayers.add(account), "RelayerRole: address is already a relayer");
+        emit RelayerAdded(account, msg.sender);
     }
 
     function _removeRelayer(address account) private {
         require(_relayers.remove(account), "RelayerRole: address is not a relayer");
-    }
-
-    function _isRelayer(address account) internal view returns (bool) {
-        return _relayers.contains(account);
+        emit RelayerRemoved(account, msg.sender);
     }
 
     function _validateAddress(address account) internal pure {

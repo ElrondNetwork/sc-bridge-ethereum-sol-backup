@@ -39,7 +39,7 @@ contract BridgeRole is AdminRole {
     /**
      * @dev Returns the address of the current bridge.
      */
-    function bridge() public view virtual returns (address) {
+    function bridge() public view returns (address) {
         return _bridge;
     }
 
@@ -55,7 +55,7 @@ contract BridgeRole is AdminRole {
      * @dev Transfers bridge role of the contract to a new account (`newBridge`).
      * Can only be called by the current bridge.
      */
-    function setBridge(address newBridge) public virtual onlyAdmin {
+    function setBridge(address newBridge) public onlyAdmin {
         require(newBridge != address(0), "BridgeRole: new bridge is the zero address");
         require(newBridge != _bridge, "BridgeRole: same address");
         require(newBridge.isContract(), "BridgeRole: new bridge must be a contract");

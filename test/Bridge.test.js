@@ -93,7 +93,9 @@ describe("Bridge", async function () {
 
     it("reverts when not called by admin", async function () {
       nonAdminBridge = bridge.connect(otherWallet);
-      await expect(nonAdminBridge.addRelayer(relayer4.address)).to.be.revertedWith("AdminRole: sender is not Admin");
+      await expect(nonAdminBridge.addRelayer(relayer4.address)).to.be.revertedWith(
+        "Access Control: sender is not Admin",
+      );
     });
 
     it("adds the address as a relayer", async function () {
@@ -105,7 +107,7 @@ describe("Bridge", async function () {
     it("emits event that a relayer was added", async function () {
       await expect(bridge.addRelayer(relayer4.address))
         .to.emit(bridge, "RelayerAdded")
-        .withArgs(relayer4.address, adminWallet);
+        .withArgs(relayer4.address, adminWallet.address);
     });
 
     it("reverts if new relayer is already a relayer", async function () {
@@ -127,14 +129,17 @@ describe("Bridge", async function () {
     });
 
     it("emits an event", async function () {
+      expect(await bridge.isRelayer(relayer4.address)).to.be.true;
       await expect(bridge.removeRelayer(relayer4.address))
         .to.emit(bridge, "RelayerRemoved")
-        .withArgs(relayer4.address, adminWallet);
+        .withArgs(relayer4.address, adminWallet.address);
     });
 
     it("reverts when not called by admin", async function () {
       nonAdminBridge = bridge.connect(otherWallet);
-      await expect(nonAdminBridge.removeRelayer(relayer4.address)).to.be.revertedWith("AdminRole: sender is not Admin");
+      await expect(nonAdminBridge.removeRelayer(relayer4.address)).to.be.revertedWith(
+        "Access Control: sender is not Admin",
+      );
     });
 
     it("reverts if address is not already a relayer", async function () {
@@ -159,7 +164,7 @@ describe("Bridge", async function () {
 
     it("reverts when not called by admin", async function () {
       nonAdminBridge = bridge.connect(otherWallet);
-      await expect(nonAdminBridge.setQuorum(newQuorum)).to.be.revertedWith("AdminRole: sender is not Admin");
+      await expect(nonAdminBridge.setQuorum(newQuorum)).to.be.revertedWith("Access Control: sender is not Admin");
     });
 
     describe("when quorum is lower than the minimum", async function () {
@@ -284,7 +289,7 @@ describe("Bridge", async function () {
     });
 
     describe("when quorum achieved", async function () {
-      describe("all deposits executed successful", async function () {
+      describe("all deposits executed successfully", async function () {
         beforeEach(async function () {
           newDepositStatuses = [3, 3, 3, 3, 3, 3, 4, 4, 4, 4];
           batch = await bridge.getNextPendingBatch();
